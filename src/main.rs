@@ -26,6 +26,9 @@ fn handle_input(input: &str) {
 
             std::process::exit(code);
         },
+        "echo" => {
+            println!("{}", &input[5..]);
+        }
         other => {
             println!("{other}: command not found");
         }
