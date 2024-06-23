@@ -53,6 +53,14 @@ fn handle_input(input: &str, env: &HashMap<String, String>) {
 
             println!("{}", directory.to_str().unwrap());
         },
+        "cd" => {
+            let new_directory = input.split(' ').nth(1).unwrap();
+
+            match std::env::set_current_dir(new_directory) {
+                Ok(_) => (),
+                Err(_) => println!("cd: {new_directory}: No such file or directory"),
+            }
+        },
         other => {
             let found_executable = find_executable(env.get("PATH").or(Some(&"".to_string())).unwrap().split(':'), other);
 
@@ -77,6 +85,7 @@ fn type_builtin(input: &str, env: &HashMap<String, String>) -> String {
         ("exit", "shell builtin"),
         ("type", "shell builtin"),
         ("pwd", "shell builtin"),
+        ("cd", "shell builtin"),
     ];
     let definitions = HashMap::from(known_commands);
 
