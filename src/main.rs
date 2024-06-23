@@ -9,5 +9,16 @@ fn main() {
     let mut input = String::new();
     stdin.read_line(&mut input).unwrap();
 
-    println!("input");
+    handle_input(&input);
+}
+
+fn handle_input(input: &str) {
+    // Strip of newline character
+    let input = &input[..input.len() - 1];
+
+    match input {
+        other => {
+            println!("{other}: command not found");
+        }
+    }
 }
