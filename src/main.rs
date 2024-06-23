@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env::current_dir;
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
@@ -46,7 +47,12 @@ fn handle_input(input: &str, env: &HashMap<String, String>) {
             let result = type_builtin(input, env);
 
             println!("{result}");
-        }
+        },
+        "pwd" => {
+            let directory = current_dir().unwrap();
+
+            println!("{}", directory.to_str().unwrap());
+        },
         other => {
             let found_executable = find_executable(env.get("PATH").or(Some(&"".to_string())).unwrap().split(':'), other);
 
@@ -70,6 +76,7 @@ fn type_builtin(input: &str, env: &HashMap<String, String>) -> String {
         ("echo", "shell builtin"),
         ("exit", "shell builtin"),
         ("type", "shell builtin"),
+        ("pwd", "shell builtin"),
     ];
     let definitions = HashMap::from(known_commands);
 
