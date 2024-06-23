@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
+use std::process::Command;
 
 fn main() {
     let env: HashMap<_, _> = std::env::vars().collect();
@@ -46,7 +48,19 @@ fn handle_input(input: &str, env: &HashMap<String, String>) {
             println!("{result}");
         }
         other => {
-            println!("{other}: command not found");
+            let found_executable = find_executable(env.get("PATH").or(Some(&"".to_string())).unwrap().split(':'), other);
+
+            if found_executable.is_none() {
+                println!("{other}: command not found");
+
+                return ();
+            }
+
+            let executable = found_executable.unwrap();
+
+            let args = input.split(' ').skip(1).collect();
+
+            execute(&executable, &args);
         }
     }
 }
@@ -102,4 +116,11 @@ fn find_executable<'a>(path: impl Iterator<Item = &'a str>, name: &str) -> Optio
     }
 
     return None;
+}
+
+fn execute(executable: &Path, args: &Vec<&str>) {
+    Command::new(executable)
+        .args(args)
+        .status()
+        .unwrap();
 }
