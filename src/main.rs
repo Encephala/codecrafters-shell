@@ -1,8 +1,10 @@
 use std::collections::HashMap;
-#[allow(unused_imports)]
 use std::io::{self, Write};
+use std::os::unix::fs::PermissionsExt;
 
 fn main() {
+    let env: HashMap<_, _> = std::env::vars().collect();
+
     loop {
         print!("$ ");
         io::stdout().flush().unwrap();
@@ -11,11 +13,11 @@ fn main() {
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
-        handle_input(&input);
+        handle_input(&input, &env);
     }
 }
 
-fn handle_input(input: &str) {
+fn handle_input(input: &str, env: &HashMap<String, String>) {
     // Strip of newline character
     if input.len() == 0 {
         println!();
@@ -39,7 +41,9 @@ fn handle_input(input: &str) {
             println!("{}", &input[5..]);
         },
         "type" => {
-            type_builtin(input)
+            let result = type_builtin(input, env);
+
+            println!("{result}");
         }
         other => {
             println!("{other}: command not found");
@@ -47,7 +51,7 @@ fn handle_input(input: &str) {
     }
 }
 
-fn type_builtin(input: &str) {
+fn type_builtin(input: &str, env: &HashMap<String, String>) -> String {
     let known_commands = [
         ("echo", "shell builtin"),
         ("exit", "shell builtin"),
@@ -57,10 +61,45 @@ fn type_builtin(input: &str) {
 
     let command = input.split(' ').nth(1).unwrap();
 
-    let output = match definitions.get(command) {
-        Some(definition) => format!("{command} is a {definition}"),
-        None => format!("{command}: not found"),
-    };
+    match definitions.get(command) {
+        Some(definition) => return format!("{command} is a {definition}"),
+        None => {
+            let path = env.get("PATH");
 
-    println!("{}", output);
+            if path.is_none() {
+                return format!("{command}: not found");
+            }
+
+            let found_executable = find_executable(path.unwrap().split(':'), command);
+
+            if found_executable.is_none() {
+                return format!("{command}: not found");
+            }
+
+            let executable = found_executable.unwrap();
+
+            let file_is_executable = {
+                let permissions = executable.metadata().unwrap().permissions();
+
+                permissions.mode() & 0o001 != 0
+            };
+
+            if !file_is_executable {
+                return format!("{command}: not found");
+            }
+
+            return format!("{command} is {}", executable.to_str().unwrap());
+        }
+    };
+}
+
+fn find_executable<'a>(path: impl Iterator<Item = &'a str>, name: &str) -> Option<std::path::PathBuf> {
+    for directory in path {
+        let full_path = std::path::PathBuf::from(directory).join(name);
+        if full_path.exists() {
+            return Some(full_path);
+        }
+    }
+
+    return None;
 }
