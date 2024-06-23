@@ -18,7 +18,14 @@ fn handle_input(input: &str) {
     // Strip of newline character
     let input = &input[..input.len() - 1];
 
-    match input {
+    let mut words = input.split(' ');
+
+    match words.clone().nth(0).unwrap() {
+        "exit" => {
+            let code = words.nth(1).unwrap().parse::<i32>().unwrap();
+
+            std::process::exit(code);
+        },
         other => {
             println!("{other}: command not found");
         }
