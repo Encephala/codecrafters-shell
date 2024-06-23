@@ -54,9 +54,15 @@ fn handle_input(input: &str, env: &HashMap<String, String>) {
             println!("{}", directory.to_str().unwrap());
         },
         "cd" => {
-            let new_directory = input.split(' ').nth(1).unwrap();
+            let mut new_directory = input.split(' ').nth(1).unwrap().to_string();
 
-            match std::env::set_current_dir(new_directory) {
+            if new_directory.strip_prefix('~').is_some() {
+                let home = env.get("HOME").or(Some(&"/".to_string())).unwrap().clone();
+
+                new_directory = home + &words.clone().skip(1).collect::<String>()[1..];
+            }
+
+            match std::env::set_current_dir(&new_directory) {
                 Ok(_) => (),
                 Err(_) => println!("cd: {new_directory}: No such file or directory"),
             }
